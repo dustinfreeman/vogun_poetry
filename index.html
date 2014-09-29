@@ -18,9 +18,9 @@
 
 <!-- Shaders -->
 	<script type="x-shader/x-vertex" id="vertexshader">
-		// #ifdef GL_ES
-  //       precision highp float;
-  //       #endif
+		#ifdef GL_ES
+        precision highp float;
+        #endif
 
   		varying vec3 vNormal;
 		varying vec2 vUv;
@@ -31,91 +31,28 @@
 		    vNormal = normal;
 		    gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
 		}
-
-  // 		varying vec3 vNormal;
-		// varying vec2 vUv;
-		
-		// void main() 
-		// { 
-			
-
-		// 	vNormal = normal;
-		//     vUv = uv;
-		//     gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
-		// }
-
-		// ===========================================
-
-		// varying vec3 vNormal;
-		// varying vec2 vUv;
-
-		// void main() {
-
-		// 	vNormal = normal;
-		// 	vUv = uv;
-			
-		// 	// multiply our displacement by the
-		// 	// amplitude. The amp will get animated
-		// 	// so we'll have animated displacement
-		// 	// vec3 newPosition = position + 
-		// 	// 				   normal * 
-		// 	// 				   vec3(displacement *
-		// 	// 						amplitude);
-
-		// 	// gl_Position = projectionMatrix *
-		// 	// 			  modelViewMatrix *
-		// 	// 			  vec4(newPosition,1.0);
-
-		// 	//gl_Position = projectionMatrix *
-		// 	// 			  modelViewMatrix * position;
-		// }
 	</script>
 	
 	<script type="x-shader/x-fragment" id="fragmentshader">
-		// #ifdef GL_ES
-  //       precision highp float;
-  //       #endif
+		#ifdef GL_ES
+        precision highp float;
+        #endif
+
 
   		// same name and type as VS
 		varying vec3 vNormal;
 		varying vec2 vUv;
 		
-
   		void main() {
-  			gl_FragColor = vec4(vNormal[0], vNormal[1], vNormal[2], 1.0);
+			//color borders white
+			if (	vUv[0] < 0.1 || vUv[0] > 0.9  ||
+					vUv[1] < 0.1 || vUv[1] > 0.9	) {
+					gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+				}
+
   		}
-
-  		
-		// void main() {
-
-		// 	gl_FragColor = vec4(1.0,1.0,1.0,1.0);
-
-			// calc the dot product and clamp
-			// 0 -> 1 rather than -1 -> 1
-			// vec3 light = vec3(0.5,0.2,1.0);
-			
-			// // ensure it's normalized
-			// light = normalize(light);
-			
-			// float dProd = max(0.0, dot(vNormal, light));
-			
-			// // feed into our frag colour
-			// gl_FragColor = vec4(dProd, dProd, dProd, 1.0);
-			
-			//gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
-
-			//voxel shading
-			// gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
-			// vec2 p = vUv;
-			// if ((p.x > 0.1 || p.x < 0.9) &&
-			// 	(p.y > 0.1 || p.y < 0.9) ) {
-			// 	gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
-			// }		
-		//}
-	
 	</script>
 	<!-- End Shaders -->
-
 
 <!-- jQuery code to display an information button and box when clicked. -->
 <script src="js/jquery-1.9.1.js"></script>
@@ -249,19 +186,19 @@ function init()
 	// create an array with six textures for a cool cube
 	var materialArray = [];
 
-	// materialArray.push(shaderMaterial);
-	// materialArray.push(shaderMaterial);
-	// materialArray.push(shaderMaterial);
-	// materialArray.push(shaderMaterial);
-	// materialArray.push(shaderMaterial);
-	// materialArray.push(shaderMaterial);
+	materialArray.push(shaderMaterial);
+	materialArray.push(shaderMaterial);
+	materialArray.push(shaderMaterial);
+	materialArray.push(shaderMaterial);
+	materialArray.push(shaderMaterial);
+	materialArray.push(shaderMaterial);
 
-	materialArray.push(new THREE.MeshBasicMaterial( { map: THREE.ImageUtils.loadTexture( 'images/xpos.png' ) }));
-	materialArray.push(new THREE.MeshBasicMaterial( { map: THREE.ImageUtils.loadTexture( 'images/xneg.png' ) }));
-	materialArray.push(new THREE.MeshBasicMaterial( { map: THREE.ImageUtils.loadTexture( 'images/ypos.png' ) }));
-	materialArray.push(new THREE.MeshBasicMaterial( { map: THREE.ImageUtils.loadTexture( 'images/yneg.png' ) }));
-	materialArray.push(new THREE.MeshBasicMaterial( { map: THREE.ImageUtils.loadTexture( 'images/zpos.png' ) }));
-	materialArray.push(new THREE.MeshBasicMaterial( { map: THREE.ImageUtils.loadTexture( 'images/zneg.png' ) }));
+	// materialArray.push(new THREE.MeshBasicMaterial( { map: THREE.ImageUtils.loadTexture( 'images/xpos.png' ) }));
+	// materialArray.push(new THREE.MeshBasicMaterial( { map: THREE.ImageUtils.loadTexture( 'images/xneg.png' ) }));
+	// materialArray.push(new THREE.MeshBasicMaterial( { map: THREE.ImageUtils.loadTexture( 'images/ypos.png' ) }));
+	// materialArray.push(new THREE.MeshBasicMaterial( { map: THREE.ImageUtils.loadTexture( 'images/yneg.png' ) }));
+	// materialArray.push(new THREE.MeshBasicMaterial( { map: THREE.ImageUtils.loadTexture( 'images/zpos.png' ) }));
+	// materialArray.push(new THREE.MeshBasicMaterial( { map: THREE.ImageUtils.loadTexture( 'images/zneg.png' ) }));
 
 	var MovingCubeMat = new THREE.MeshFaceMaterial(materialArray);
 	var MovingCubeGeom = new THREE.CubeGeometry( 50, 50, 50, 1, 1, 1, materialArray );
