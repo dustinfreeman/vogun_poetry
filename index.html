@@ -42,6 +42,7 @@
 
         uniform float shockwave_x;
         uniform float shockwave_y;
+        uniform float shockwave_z;
 
   		// same name and type as VS
 		varying vec3 vNormal;
@@ -51,11 +52,28 @@
   		void main() {
   			//make the appearance of a shockwave
 
+
+  			vec4 border_color = vec4(1.0, 1.0, 1.0, 1.0);
   			float border_width = 0.05;
   			
-  			float shockwave_x_dist = abs(v_gl_Position[0] - shockwave_x);
-  			if (shockwave_x_dist < 50.0) {
-  				border_width += 0.05 * 3.0 * (1.0 - shockwave_x_dist/50.0);
+  			vec3 shockwave_dist;
+  			shockwave_dist[0] = abs(v_gl_Position[0] - shockwave_x);
+  			shockwave_dist[1] = abs(v_gl_Position[1] - shockwave_y);
+  			shockwave_dist[2] = abs(v_gl_Position[2] - shockwave_z);
+  			
+  			if (shockwave_dist[0] < 200.0) {
+  				border_width += 0.05 * 3.0 * (1.0 - shockwave_dist[0]/200.0);
+  				border_color[0] *= shockwave_dist[0]/200.0;
+  			}
+
+  			if (shockwave_dist[1] < 30.0) {
+  				border_width += 0.05 * 6.0 * (1.0 - shockwave_dist[1]/30.0);
+  				border_color[1] *= shockwave_dist[1]/30.0;
+  			}
+
+  			if (shockwave_dist[2] < 10.0) {
+  				border_width += 0.05 * 10.0 * (1.0 - shockwave_dist[2]/10.0);
+  				border_color[2] *= shockwave_dist[1]/10.0;
   			}
 
 			//color borders white
@@ -63,7 +81,7 @@
 					vUv[0] > (1.0 - border_width)  ||
 					vUv[1] < border_width || 
 					vUv[1] > (1.0 - border_width)	) {
-					gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+					gl_FragColor = border_color;
 				}
 
   		}
@@ -159,7 +177,11 @@ function init()
 		shockwave_y: {
 			type: 'f', // a float
 			value: SHOCKWAVE_MAX
-		}
+		},
+		shockwave_z: {
+			type: 'f', 
+			value: SHOCKWAVE_MAX 
+		},
 	};
 
 	this.customAttributes = {	};
@@ -277,6 +299,10 @@ function update()
 	uniforms.shockwave_y.value = uniforms.shockwave_y.value - 500.0*delta;
 	if (uniforms.shockwave_y.value < -SHOCKWAVE_MAX)
 		uniforms.shockwave_y.value = SHOCKWAVE_MAX;
+
+	uniforms.shockwave_z.value = uniforms.shockwave_z.value - 500.0*delta;
+	if (uniforms.shockwave_z.value < -SHOCKWAVE_MAX)
+		uniforms.shockwave_z.value = SHOCKWAVE_MAX;
 
 	
 	// local coordinates
