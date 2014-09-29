@@ -92,10 +92,23 @@ var keyboard = new THREEx.KeyboardState();
 var clock = new THREE.Clock();
 // custom global variables
 
+var WALL_SIZE = 5;
+var CUBE_SIZE = 50;
+
 var MovingGroup;
 
 init();
 animate();
+
+var MovingCubeMat;
+var MovingCubeGeom;
+
+function make_wall_cube(x, z) {
+	var WallCube = new THREE.Mesh( MovingCubeGeom, MovingCubeMat);
+	
+	WallCube.position.set(x*CUBE_SIZE,25.1,z*CUBE_SIZE);
+	scene.add(WallCube);
+}
 
 // FUNCTIONS 		
 function init() 
@@ -202,18 +215,25 @@ function init()
 
 	MovingGroup = new THREE.Object3D();//create an empty container
 
-	var MovingCubeMat = new THREE.MeshFaceMaterial(materialArray);
-	var CUBE_SIZE = 50;
-	var MovingCubeGeom = new THREE.CubeGeometry( CUBE_SIZE, CUBE_SIZE, CUBE_SIZE, 1, 1, 1, materialArray );
+	MovingCubeMat = new THREE.MeshFaceMaterial(materialArray);
+	MovingCubeGeom = new THREE.CubeGeometry( CUBE_SIZE, CUBE_SIZE, CUBE_SIZE, 1, 1, 1, materialArray );
 
 	for (var mc = 0; mc < 4; mc++) { 
 		var MovingCube = new THREE.Mesh( MovingCubeGeom, MovingCubeMat );
 		MovingCube.position.set(0, 25.1, mc*CUBE_SIZE);
 		MovingGroup.add(MovingCube);
 	}
-	
 	scene.add( MovingGroup );	
-	
+
+	for (var wall_x = -WALL_SIZE; wall_x < WALL_SIZE; wall_x++) {
+		make_wall_cube(wall_x, -WALL_SIZE);
+		make_wall_cube(wall_x, WALL_SIZE);	
+	}
+
+	for (var wall_z = -WALL_SIZE; wall_z < WALL_SIZE; wall_z++) {
+		make_wall_cube(-WALL_SIZE, wall_z);
+		make_wall_cube(WALL_SIZE, wall_z);	
+	}
 }
 
 
