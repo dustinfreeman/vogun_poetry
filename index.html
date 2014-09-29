@@ -41,6 +41,7 @@
         #endif
 
         uniform float shockwave_x;
+        uniform float shockwave_y;
 
   		// same name and type as VS
 		varying vec3 vNormal;
@@ -48,16 +49,14 @@
 		varying vec4 v_gl_Position;
 		
   		void main() {
-  			//make the appearance of a shockwave along x,
-  			// using the Gaussian.
+  			//make the appearance of a shockwave
 
-  			float shockwave_dist = abs(v_gl_Position[0] - shockwave_x);
-  			float blip_amount = 0.0;
-  			if (shockwave_dist < 50.0) {
-  				blip_amount = 3.0*(1.0 - shockwave_dist/50.0);
+  			float border_width = 0.05;
+  			
+  			float shockwave_x_dist = abs(v_gl_Position[0] - shockwave_x);
+  			if (shockwave_x_dist < 50.0) {
+  				border_width += 0.05 * 3.0 * (1.0 - shockwave_x_dist/50.0);
   			}
-
-  			float border_width = 0.05*(1.0 + blip_amount);
 
 			//color borders white
 			if (	vUv[0] < border_width || 
@@ -154,6 +153,10 @@ function init()
 
 	this.uniforms = {
 		shockwave_x: {
+			type: 'f', // a float
+			value: SHOCKWAVE_MAX
+		},
+		shockwave_y: {
 			type: 'f', // a float
 			value: SHOCKWAVE_MAX
 		}
@@ -266,9 +269,14 @@ function update()
 	var moveDistance = 200 * delta; // 200 pixels per second
 	var rotateAngle = Math.PI / 2 * delta;   // pi/2 radians (90 degrees) per second
 
+	//Move the shockwaves
 	uniforms.shockwave_x.value = uniforms.shockwave_x.value - 500.0*delta;
 	if (uniforms.shockwave_x.value < -SHOCKWAVE_MAX)
 		uniforms.shockwave_x.value = SHOCKWAVE_MAX;
+
+	uniforms.shockwave_y.value = uniforms.shockwave_y.value - 500.0*delta;
+	if (uniforms.shockwave_y.value < -SHOCKWAVE_MAX)
+		uniforms.shockwave_y.value = SHOCKWAVE_MAX;
 
 	
 	// local coordinates
