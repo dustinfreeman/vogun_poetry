@@ -24,12 +24,14 @@
 
   		varying vec3 vNormal;
 		varying vec2 vUv;
+		varying vec4 v_gl_Position;
 		
 		void main() 
 		{ 
 		    vUv = uv;
 		    vNormal = normal;
 		    gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+		    v_gl_Position = gl_Position;
 		}
 	</script>
 	
@@ -38,15 +40,30 @@
         precision highp float;
         #endif
 
+        uniform float shockwave_x;
 
   		// same name and type as VS
 		varying vec3 vNormal;
 		varying vec2 vUv;
+		varying vec4 v_gl_Position;
 		
   		void main() {
+  			//make the appearance of a shockwave along x,
+  			// using the Gaussian.
+
+  			float shockwave_dist = abs(v_gl_Position[0] - shockwave_x);
+  			float blip_amount = 0.0;
+  			if (shockwave_dist < 50.0) {
+  				blip_amount = 3.0*(1.0 - shockwave_dist/50.0);
+  			}
+
+  			float border_width = 0.05*(1.0 + blip_amount);
+
 			//color borders white
-			if (	vUv[0] < 0.1 || vUv[0] > 0.9  ||
-					vUv[1] < 0.1 || vUv[1] > 0.9	) {
+			if (	vUv[0] < border_width || 
+					vUv[0] > (1.0 - border_width)  ||
+					vUv[1] < border_width || 
+					vUv[1] > (1.0 - border_width)	) {
 					gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
 				}
 
@@ -95,6 +112,8 @@ var clock = new THREE.Clock();
 var WALL_SIZE = 5;
 var CUBE_SIZE = 50;
 
+var SHOCKWAVE_MAX = 1000;
+
 var MovingGroup;
 
 init();
@@ -133,13 +152,11 @@ function init()
 	// SHADERS
 	var dummyTexture = THREE.ImageUtils.generateDataTexture( 1, 1, new THREE.Color( 0xffffff ) );
 
-	this.customUniforms = {
-		baseTexture: 	{ type: "t", value: dummyTexture },
-		// baseSpeed: 		{ type: "f", value: 0.05 },
-		// noiseTexture: 	{ type: "t", value: noiseTexture },
-		// noiseScale:		{ type: "f", value: 0.5337 },
-		// alpha: 			{ type: "f", value: 1.0 },
-		// time: 			{ type: "f", value: 1.0 }
+	this.uniforms = {
+		shockwave_x: {
+			type: 'f', // a float
+			value: SHOCKWAVE_MAX
+		}
 	};
 
 	this.customAttributes = {	};
@@ -152,10 +169,9 @@ function init()
 
 	var shaderMaterial =
 	  new THREE.ShaderMaterial({
-	  	uniforms: 	customUniforms, 
+	  	uniforms: 	uniforms, 
 	  	attributes: customAttributes, 
-	  	map: 		dummyTexture, 
-	    vertexShader:   vertexshader,
+	  	vertexShader:   vertexshader,
 	    fragmentShader: fragmentshader, 
 	  });
 
@@ -220,7 +236,7 @@ function init()
 
 	for (var mc = 0; mc < 4; mc++) { 
 		var MovingCube = new THREE.Mesh( MovingCubeGeom, MovingCubeMat );
-		MovingCube.position.set(0, 25.1, mc*CUBE_SIZE);
+		MovingCube.position.set(25, 25.1, mc*CUBE_SIZE);
 		MovingGroup.add(MovingCube);
 	}
 	scene.add( MovingGroup );	
@@ -249,6 +265,11 @@ function update()
 	var delta = clock.getDelta(); // seconds.
 	var moveDistance = 200 * delta; // 200 pixels per second
 	var rotateAngle = Math.PI / 2 * delta;   // pi/2 radians (90 degrees) per second
+
+	uniforms.shockwave_x.value = uniforms.shockwave_x.value - 500.0*delta;
+	if (uniforms.shockwave_x.value < -SHOCKWAVE_MAX)
+		uniforms.shockwave_x.value = SHOCKWAVE_MAX;
+
 	
 	// local coordinates
 
