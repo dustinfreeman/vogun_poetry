@@ -92,7 +92,7 @@ var keyboard = new THREEx.KeyboardState();
 var clock = new THREE.Clock();
 // custom global variables
 
-var MovingCube;
+var MovingGroup;
 
 init();
 animate();
@@ -200,11 +200,19 @@ function init()
 	// materialArray.push(new THREE.MeshBasicMaterial( { map: THREE.ImageUtils.loadTexture( 'images/zpos.png' ) }));
 	// materialArray.push(new THREE.MeshBasicMaterial( { map: THREE.ImageUtils.loadTexture( 'images/zneg.png' ) }));
 
+	MovingGroup = new THREE.Object3D();//create an empty container
+
 	var MovingCubeMat = new THREE.MeshFaceMaterial(materialArray);
-	var MovingCubeGeom = new THREE.CubeGeometry( 50, 50, 50, 1, 1, 1, materialArray );
-	MovingCube = new THREE.Mesh( MovingCubeGeom, MovingCubeMat );
-	MovingCube.position.set(0, 25.1, 0);
-	scene.add( MovingCube );	
+	var CUBE_SIZE = 50;
+	var MovingCubeGeom = new THREE.CubeGeometry( CUBE_SIZE, CUBE_SIZE, CUBE_SIZE, 1, 1, 1, materialArray );
+
+	for (var mc = 0; mc < 4; mc++) { 
+		var MovingCube = new THREE.Mesh( MovingCubeGeom, MovingCubeMat );
+		MovingCube.position.set(0, 25.1, mc*CUBE_SIZE);
+		MovingGroup.add(MovingCube);
+	}
+	
+	scene.add( MovingGroup );	
 	
 }
 
@@ -228,40 +236,40 @@ function update()
 
 	// move forwards/backwards/left/right
 	if ( keyboard.pressed("W") )
-		MovingCube.translateZ( -moveDistance );
+		MovingGroup.translateZ( -moveDistance );
 	if ( keyboard.pressed("S") )
-		MovingCube.translateZ(  moveDistance );
+		MovingGroup.translateZ(  moveDistance );
 	if ( keyboard.pressed("Q") )
-		MovingCube.translateX( -moveDistance );
+		MovingGroup.translateX( -moveDistance );
 	if ( keyboard.pressed("E") )
-		MovingCube.translateX(  moveDistance );	
+		MovingGroup.translateX(  moveDistance );	
 
 	// rotate left/right/up/down
 	var rotation_matrix = new THREE.Matrix4().identity();
 	if ( keyboard.pressed("A") )
-		MovingCube.rotateOnAxis( new THREE.Vector3(0,1,0), rotateAngle);
+		MovingGroup.rotateOnAxis( new THREE.Vector3(0,1,0), rotateAngle);
 	if ( keyboard.pressed("D") )
-		MovingCube.rotateOnAxis( new THREE.Vector3(0,1,0), -rotateAngle);
+		MovingGroup.rotateOnAxis( new THREE.Vector3(0,1,0), -rotateAngle);
 	if ( keyboard.pressed("R") )
-		MovingCube.rotateOnAxis( new THREE.Vector3(1,0,0), rotateAngle);
+		MovingGroup.rotateOnAxis( new THREE.Vector3(1,0,0), rotateAngle);
 	if ( keyboard.pressed("F") )
-		MovingCube.rotateOnAxis( new THREE.Vector3(1,0,0), -rotateAngle);
+		MovingGroup.rotateOnAxis( new THREE.Vector3(1,0,0), -rotateAngle);
 	
 	if ( keyboard.pressed("Z") )
 	{
-		MovingCube.position.set(0,25.1,0);
-		MovingCube.rotation.set(0,0,0);
+		MovingGroup.position.set(0,25.1,0);
+		MovingGroup.rotation.set(0,0,0);
 	}
 		
 	// global coordinates
 	if ( keyboard.pressed("left") )
-		MovingCube.position.x -= moveDistance;
+		MovingGroup.position.x -= moveDistance;
 	if ( keyboard.pressed("right") )
-		MovingCube.position.x += moveDistance;
+		MovingGroup.position.x += moveDistance;
 	if ( keyboard.pressed("up") )
-		MovingCube.position.z -= moveDistance;
+		MovingGroup.position.z -= moveDistance;
 	if ( keyboard.pressed("down") )
-		MovingCube.position.z += moveDistance;
+		MovingGroup.position.z += moveDistance;
 		
 	controls.update();
 	stats.update();
