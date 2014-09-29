@@ -12,12 +12,8 @@
 		</style>
 	</head>
 	<body>
-		
 		<div id="container">
-			
-			
 		</div>
-		
 	</body>
 	<!-- This code built off of Paul Lewis' intro to shaders -->
 	<!-- https://twitter.com/aerotwist -->
@@ -32,8 +28,8 @@
 		precision highp float;
 		#endif
 		
-		uniform float amplitude;
-		attribute float displacement;
+		//uniform float amplitude;
+		//attribute float displacement;
 		varying vec3 vNormal;
 		varying vec2 vUv;
 
@@ -45,14 +41,17 @@
 			// multiply our displacement by the
 			// amplitude. The amp will get animated
 			// so we'll have animated displacement
-			vec3 newPosition = position + 
-							   normal * 
-							   vec3(displacement *
-									amplitude);
+			// vec3 newPosition = position + 
+			// 				   normal * 
+			// 				   vec3(displacement *
+			// 						amplitude);
 
-			gl_Position = projectionMatrix *
-						  modelViewMatrix *
-						  vec4(newPosition,1.0);
+			// gl_Position = projectionMatrix *
+			// 			  modelViewMatrix *
+			// 			  vec4(newPosition,1.0);
+
+			//gl_Position = projectionMatrix *
+			// 			  modelViewMatrix * position;
 		}
 	</script>
 	
@@ -78,14 +77,17 @@
 			float dProd = max(0.0, dot(vNormal, light));
 			
 			// feed into our frag colour
-			//gl_FragColor = vec4(dProd, dProd, dProd, 1.0);
-			gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+			gl_FragColor = vec4(dProd, dProd, dProd, 1.0);
+			
+			//gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
 
-			vec2 p = vUv;
-			if ((p.x > 0.1 || p.x < 0.9) &&
-				(p.y > 0.1 || p.y < 0.9) ) {
-				gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
-			}		
+			//voxel shading
+			// gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+			// vec2 p = vUv;
+			// if ((p.x > 0.1 || p.x < 0.9) &&
+			// 	(p.y > 0.1 || p.y < 0.9) ) {
+			// 	gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+			// }		
 		}
 	
 	</script>
@@ -96,110 +98,52 @@
 	
 	<script type="text/javascript">
 	
-	// @see http://paulirish.com/2011/requestanimationframe-for-smart-animating/
-	window.requestAnimFrame = (function(){
-      return  window.requestAnimationFrame       || 
-              window.webkitRequestAnimationFrame || 
-              window.mozRequestAnimationFrame    || 
-              window.oRequestAnimationFrame      || 
-              window.msRequestAnimationFrame     || 
-              function(/* function */ callback, /* DOMElement */ element){
-                window.setTimeout(callback, 1000 / 60);
-              };
-    })();
-	// set the scene size
-	var WIDTH = 400,
-	    HEIGHT = 300;
-	
-	// set some camera attributes
-	var VIEW_ANGLE = 45,
-	    ASPECT = WIDTH / HEIGHT,
-	    NEAR = 0.1,
-	    FAR = 10000;
-	
-	// get the DOM element to attach to
-	// - assume we've got jQuery to hand
-	var $container = $('#container');
-	
-	// create a WebGL renderer, camera
-	// and a scene
-	var renderer = new THREE.WebGLRenderer();
-	var camera = new THREE.Camera(  VIEW_ANGLE,
-	                                ASPECT,
-	                                NEAR,
-	                                FAR  );
-	var scene = new THREE.Scene();
-	
-	// the camera starts at 0,0,0 so pull it back
-	camera.position.z = 300;
-	
-	// start the renderer
-	renderer.setSize(WIDTH, HEIGHT);
-	
-	// attach the render-supplied DOM element
-	$container.append(renderer.domElement);
-	
-	var attributes = {
-		displacement: {
-			type: 'f', // a float
-			value: [] // an empty array
-		}
-	};
-	
-	var uniforms = {
-		amplitude: {
-			type: 'f', // a float
-			value: 0
-		}
-	};
-	
-	// create the sphere's material
-	var shaderMaterial = new THREE.ShaderMaterial({
-		uniforms:     	uniforms,
-		attributes:     attributes,
-		vertexShader:   $('#vertexshader').text(),
-		fragmentShader: $('#fragmentshader').text()
-	});
-	
-	// set up the sphere vars
-	var radius = 50, segments = 16, rings = 16;
-	
-	// create a new mesh with sphere geometry -
-	// we will cover the sphereMaterial next!
-	// var sphere = new THREE.Mesh(
-	//    new THREE.Sphere(radius, segments, rings),
-	//    shaderMaterial);
-	   
-	// now populate the array of attributes
-	// var vertices = sphere.geometry.vertices;
-	// var values = attributes.displacement.value
-	// for(var v = 0; v < vertices.length; v++) {
-	// 	values.push(Math.random() * 10);
-	// }
-	
-	// add the sphere to the scene
-	//scene.addChild(sphere);
+	var camera, scene, renderer;
+	var geometry, shaderMaterial, mesh;
 
-	//Sample cube
-	var cube = THREE.Mesh (
-		//new THREE.Cube(c,c,c,1,1,1,null,!0),
-		new THREE.BoxGeometry(radius, radius, radius),
-		shaderMaterial);
-	scene.addChild(cube);
-	
-	var frame = 0;
-	
-	// draw!
-	function update() {
-	
-		//uniforms.amplitude.value = Math.sin(frame);
-		frame += 0.1;
-	
-		renderer.render(scene, camera);
-		
-		// set up the next call
-		requestAnimFrame(update);
+	init();
+	animate();
+
+	function init() {
+
+	    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 10000);
+	    camera.position.z = 100;
+
+	    scene = new THREE.Scene();
+
+	    geometry = new THREE.BoxGeometry(10, 10, 10);
+
+	    shaderMaterial = new THREE.ShaderMaterial({
+	    	uniforms: { time: { type: "f", value: 1.0 }, resolution: { type: "v2", value: new THREE.Vector2() } },
+			//uniforms:     	uniforms,
+			//attributes:     attributes,
+			vertexShader:   $('#vertexshader').text(),
+			fragmentShader: $('#fragmentshader').text()
+		});
+
+	    mesh = new THREE.Mesh(geometry, shaderMaterial);
+	    scene.add(mesh);
+
+	    renderer = new THREE.CanvasRenderer();
+	    renderer.setSize(window.innerWidth, window.innerHeight);
+
+	    // get the DOM element to attach to
+		// - assume we've got jQuery to hand
+		var $container = $('#container');
+	    // attach the render-supplied DOM element
+		$container.append(renderer.domElement);
+
 	}
-	requestAnimFrame(update);
+
+	function animate() {
+
+	    requestAnimationFrame(animate);
+
+	    mesh.rotation.x += 0.01;
+	    mesh.rotation.y += 0.02;
+
+	    renderer.render(scene, camera);
+
+	}
 	</script>
 </html>
