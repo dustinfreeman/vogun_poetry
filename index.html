@@ -125,9 +125,68 @@ var container, scene, camera, renderer, controls, stats;
 var keyboard = new THREEx.KeyboardState();
 var clock = new THREE.Clock();
 
+function getImageData( image ) {
+    var canvas = document.createElement( 'canvas' );
+    canvas.width = image.width;
+    canvas.height = image.height;
+    console.log(image);
+    console.log(image.width);
+    console.log(image.height);
+    var context = canvas.getContext( '2d' );
+    context.drawImage( image, 0, 0 );
+
+    return context.getImageData( 0, 0, image.width, image.height );
+}
+
+function getPixel( imagedata, x, y ) {
+    var position = ( x + imagedata.width * y ) * 4, data = imagedata.data;
+    return { r: data[ position ], g: data[ position + 1 ], b: data[ position + 2 ], a: data[ position + 3 ] };
+}
+
+var cubeMaterialArray;
+var CUBE_SIZE = 20;
+
+function LoadVoxelObject(image, hor_plane_width) {
+	console.log(image);
+	var vox_data = getImageData(image);
+	var VoxelGroup = new THREE.Object3D();//create an empty container
+	
+	//spawn cubes in each non-zero voxel (alpha == 0) of the object
+	//different plan sections of the object are laid out horizontally.
+	var num_hor_planes = vox_data.height/hor_plane_width;
+	console.log("Voxel Object: num_hor_planes", num_hor_planes);
+
+	for (var x = 0; x < hor_plane_width; x ++) {
+	for (var z = 0; z < hor_plane_width; z ++) {
+	for (var y = 0; y < num_hor_planes; y ++) {
+		var pixel = getPixel(vox_data, x, z + y*hor_plane_width);
+
+		if (pixel.a > 0) //solid object here!
+		{
+			var Cube = new THREE.Mesh( MovingCubeGeom, MovingCubeMat );
+
+			//centering
+			Cube.position.set(
+				(x - hor_plane_width/2.0)*CUBE_SIZE, 
+				(y - num_hor_planes/2.0)*CUBE_SIZE, 
+				(z - hor_plane_width/2.0)*CUBE_SIZE);
+
+			VoxelGroup.add(Cube);
+		}
+	}}}
+
+	scene.add( VoxelGroup );
+	return VoxelGroup;
+	// for (var mc = 0; mc < 4; mc++) { 
+	// 	var MovingCube = new THREE.Mesh( MovingCubeGeom, MovingCubeMat );
+	// 	MovingCube.position.set(25, 25.1, mc*CUBE_SIZE);
+	// 	MovingGroup.add(MovingCube);
+	// }
+	// scene.add( MovingGroup );	
+}
+
 // custom global variables
-var WALL_SIZE = 5;
-var CUBE_SIZE = 50;
+var WALL_SIZE = 10;
 var SHOCKWAVE_MAX = 1000;
 var MovingGroup;
 
@@ -143,6 +202,11 @@ function make_wall_cube(x, z) {
 	scene.add(WallCube);
 }
 
+function resetMovingGroup() {
+	MovingGroup.position.set(0,2*25.1,0);
+	MovingGroup.rotation.set(0,0,0);
+}
+	
 // FUNCTIONS 		
 function init() 
 {
@@ -223,27 +287,26 @@ function init()
 	////////////
 	// CUSTOM //
 	////////////
-	
-	// create an array with six textures for a cool cube
-	var materialArray = [];
 
-	materialArray.push(shaderMaterial);
-	materialArray.push(shaderMaterial);
-	materialArray.push(shaderMaterial);
-	materialArray.push(shaderMaterial);
-	materialArray.push(shaderMaterial);
-	materialArray.push(shaderMaterial);
+	// create an array with six textures for a cool cube
+	cubeMaterialArray = [];
+	cubeMaterialArray.push(shaderMaterial);
+	cubeMaterialArray.push(shaderMaterial);
+	cubeMaterialArray.push(shaderMaterial);
+	cubeMaterialArray.push(shaderMaterial);
+	cubeMaterialArray.push(shaderMaterial);
+	cubeMaterialArray.push(shaderMaterial);
+
+	MovingCubeMat = new THREE.MeshFaceMaterial(cubeMaterialArray);
+	MovingCubeGeom = new THREE.CubeGeometry( CUBE_SIZE, CUBE_SIZE, CUBE_SIZE, 1, 1, 1, cubeMaterialArray );
 
 	//Make moving object
-	MovingGroup = new THREE.Object3D();//create an empty container
-	MovingCubeMat = new THREE.MeshFaceMaterial(materialArray);
-	MovingCubeGeom = new THREE.CubeGeometry( CUBE_SIZE, CUBE_SIZE, CUBE_SIZE, 1, 1, 1, materialArray );
-	for (var mc = 0; mc < 4; mc++) { 
-		var MovingCube = new THREE.Mesh( MovingCubeGeom, MovingCubeMat );
-		MovingCube.position.set(25, 25.1, mc*CUBE_SIZE);
-		MovingGroup.add(MovingCube);
-	}
-	scene.add( MovingGroup );	
+	var boat_img = new Image();
+    boat_img.onload = function() {
+        MovingGroup = LoadVoxelObject(this, 8);
+        resetMovingGroup();
+    };
+    boat_img.src = 'images/boat.png';
 
 	//Make wall
 	for (var wall_x = -WALL_SIZE; wall_x <= WALL_SIZE; wall_x++) {
@@ -305,8 +368,7 @@ function update()
 	
 	if ( keyboard.pressed("Z") )
 	{
-		MovingGroup.position.set(0,25.1,0);
-		MovingGroup.rotation.set(0,0,0);
+		resetMovingGroup();
 	}
 		
 	// global coordinates
