@@ -31,7 +31,7 @@
 		    vUv = uv;
 		    vNormal = normal;
 		    gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
-		    v_gl_Position = gl_Position;
+		    v_gl_Position = modelViewMatrix * vec4( position, 1.0 );
 		}
 	</script>
 	
@@ -96,6 +96,7 @@
 <script src="js/info.js"></script>
 <div id="infoButton"></div>
 <div id="infoBox" title="Demo Information">
+Original Demo Modified by Dustin Freeman for Shader Fun <br/>
 Movement controls: <br/>
 <ul>
 <li>W/S: Translate Forward/Backward
@@ -266,12 +267,12 @@ function init()
 	}
 	scene.add( MovingGroup );	
 
-	for (var wall_x = -WALL_SIZE; wall_x < WALL_SIZE; wall_x++) {
+	for (var wall_x = -WALL_SIZE; wall_x <= WALL_SIZE; wall_x++) {
 		make_wall_cube(wall_x, -WALL_SIZE);
 		make_wall_cube(wall_x, WALL_SIZE);	
 	}
 
-	for (var wall_z = -WALL_SIZE; wall_z < WALL_SIZE; wall_z++) {
+	for (var wall_z = -WALL_SIZE; wall_z <= WALL_SIZE; wall_z++) {
 		make_wall_cube(-WALL_SIZE, wall_z);
 		make_wall_cube(WALL_SIZE, wall_z);	
 	}
@@ -292,15 +293,15 @@ function update()
 	var rotateAngle = Math.PI / 2 * delta;   // pi/2 radians (90 degrees) per second
 
 	//Move the shockwaves
-	uniforms.shockwave_x.value = uniforms.shockwave_x.value - 500.0*delta;
+	uniforms.shockwave_x.value = uniforms.shockwave_x.value - 100.0*delta;
 	if (uniforms.shockwave_x.value < -SHOCKWAVE_MAX)
 		uniforms.shockwave_x.value = SHOCKWAVE_MAX;
 
-	uniforms.shockwave_y.value = uniforms.shockwave_y.value - 500.0*delta;
+	uniforms.shockwave_y.value = uniforms.shockwave_y.value - 300.0*delta;
 	if (uniforms.shockwave_y.value < -SHOCKWAVE_MAX)
 		uniforms.shockwave_y.value = SHOCKWAVE_MAX;
 
-	uniforms.shockwave_z.value = uniforms.shockwave_z.value - 500.0*delta;
+	uniforms.shockwave_z.value = uniforms.shockwave_z.value - 900.0*delta;
 	if (uniforms.shockwave_z.value < -SHOCKWAVE_MAX)
 		uniforms.shockwave_z.value = SHOCKWAVE_MAX;
 
