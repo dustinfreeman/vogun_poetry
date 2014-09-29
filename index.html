@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-	<title>Mesh Movement (Three.js)</title>
+	<title>Shimmering Shader Bordershs</title>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 	<link rel=stylesheet href="css/base.css"/>
@@ -18,10 +18,6 @@
 
 <!-- Shaders -->
 	<script type="x-shader/x-vertex" id="vertexshader">
-		#ifdef GL_ES
-        precision highp float;
-        #endif
-
   		varying vec3 vNormal;
 		varying vec2 vUv;
 		varying vec4 v_gl_Position;
@@ -36,42 +32,26 @@
 	</script>
 	
 	<script type="x-shader/x-fragment" id="fragmentshader">
-		#ifdef GL_ES
-        precision highp float;
-        #endif
-
+		//shockwave location vars
         uniform float shockwave_x;
         uniform float shockwave_y;
         uniform float shockwave_z;
 
-  		// same name and type as VS
 		varying vec3 vNormal;
 		varying vec2 vUv;
 		varying vec4 v_gl_Position;
 		
   		void main() {
-			// calc the dot product and clamp
-			// 0 -> 1 rather than -1 -> 1
+  			//=============================
+  			//draw the main face, shaded by light
+  			//from: http://aerotwist.com/tutorials/an-introduction-to-shaders-part-2/
 			vec3 light = vec3(200, 200, 100);
-
-			// ensure it's normalized
 			light = normalize(light);
+			float dProd = max(0.0, dot(vNormal, light));
+			gl_FragColor = vec4(dProd, dProd, dProd, 1.0);
 
-			// calculate the dot product of
-			// the light to the vertex normal
-			float dProd = max(0.0,
-			            dot(vNormal, light));
-
-			// feed into our frag colour
-			gl_FragColor = vec4(dProd, // R
-			              dProd, // G
-			              dProd, // B
-			              1.0);  // A
-
-
-  			//make the appearance of a shockwave
-
-
+			//=============================
+  			//perturb border to make the appearance of a shockwave
   			vec4 border_color = vec4(1.0, 1.0, 1.0, 1.0);
   			float border_width = 0.05;
   			
@@ -79,7 +59,9 @@
   			shockwave_dist[0] = abs(v_gl_Position[0] - shockwave_x);
   			shockwave_dist[1] = abs(v_gl_Position[1] - shockwave_y);
   			shockwave_dist[2] = abs(v_gl_Position[2] - shockwave_z);
-  			
+
+			//customizing intensity and effective width for each,
+			// correlates roughly with speed: thinner <-> faster  			
   			if (shockwave_dist[0] < 200.0) {
   				border_width += 0.05 * 3.0 * (1.0 - shockwave_dist[0]/200.0);
   				border_color[0] *= shockwave_dist[0]/200.0;
@@ -94,15 +76,13 @@
   				border_width += 0.05 * 10.0 * (1.0 - shockwave_dist[2]/10.0);
   				border_color[2] *= shockwave_dist[1]/10.0;
   			}
-
-			//color borders white
+			//color borders 
 			if (	vUv[0] < border_width || 
 					vUv[0] > (1.0 - border_width)  ||
 					vUv[1] < border_width || 
 					vUv[1] > (1.0 - border_width)	) {
 					gl_FragColor = border_color;
 				}
-
   		}
 	</script>
 	<!-- End Shaders -->
@@ -115,7 +95,7 @@
 <script src="js/info.js"></script>
 <div id="infoButton"></div>
 <div id="infoBox" title="Demo Information">
-Original Demo Modified by Dustin Freeman for Shader Fun <br/>
+Original Three.js Demo Modified by Dustin Freeman for Shader Fun <br/>
 Movement controls: <br/>
 <ul>
 <li>W/S: Translate Forward/Backward
@@ -144,13 +124,11 @@ This three.js demo is part of a collection at
 var container, scene, camera, renderer, controls, stats;
 var keyboard = new THREEx.KeyboardState();
 var clock = new THREE.Clock();
-// custom global variables
 
+// custom global variables
 var WALL_SIZE = 5;
 var CUBE_SIZE = 50;
-
 var SHOCKWAVE_MAX = 1000;
-
 var MovingGroup;
 
 init();
@@ -161,7 +139,6 @@ var MovingCubeGeom;
 
 function make_wall_cube(x, z) {
 	var WallCube = new THREE.Mesh( MovingCubeGeom, MovingCubeMat);
-	
 	WallCube.position.set(x*CUBE_SIZE,25.1,z*CUBE_SIZE);
 	scene.add(WallCube);
 }
@@ -188,7 +165,6 @@ function init()
 	container.appendChild( renderer.domElement );
 	// SHADERS
 	var dummyTexture = THREE.ImageUtils.generateDataTexture( 1, 1, new THREE.Color( 0xffffff ) );
-
 	this.uniforms = {
 		shockwave_x: {
 			type: 'f', // a float
@@ -203,15 +179,9 @@ function init()
 			value: SHOCKWAVE_MAX 
 		},
 	};
-
 	this.customAttributes = {	};
-
 	var vertexshader = document.getElementById( 'vertexshader' ).textContent;
-	//console.log(vertexshader);
 	var fragmentshader = document.getElementById( 'fragmentshader' ).textContent;
-	//console.log(fragmentshader);
-
-
 	var shaderMaterial =
 	  new THREE.ShaderMaterial({
 	  	uniforms: 	uniforms, 
@@ -264,18 +234,10 @@ function init()
 	materialArray.push(shaderMaterial);
 	materialArray.push(shaderMaterial);
 
-	// materialArray.push(new THREE.MeshBasicMaterial( { map: THREE.ImageUtils.loadTexture( 'images/xpos.png' ) }));
-	// materialArray.push(new THREE.MeshBasicMaterial( { map: THREE.ImageUtils.loadTexture( 'images/xneg.png' ) }));
-	// materialArray.push(new THREE.MeshBasicMaterial( { map: THREE.ImageUtils.loadTexture( 'images/ypos.png' ) }));
-	// materialArray.push(new THREE.MeshBasicMaterial( { map: THREE.ImageUtils.loadTexture( 'images/yneg.png' ) }));
-	// materialArray.push(new THREE.MeshBasicMaterial( { map: THREE.ImageUtils.loadTexture( 'images/zpos.png' ) }));
-	// materialArray.push(new THREE.MeshBasicMaterial( { map: THREE.ImageUtils.loadTexture( 'images/zneg.png' ) }));
-
+	//Make moving object
 	MovingGroup = new THREE.Object3D();//create an empty container
-
 	MovingCubeMat = new THREE.MeshFaceMaterial(materialArray);
 	MovingCubeGeom = new THREE.CubeGeometry( CUBE_SIZE, CUBE_SIZE, CUBE_SIZE, 1, 1, 1, materialArray );
-
 	for (var mc = 0; mc < 4; mc++) { 
 		var MovingCube = new THREE.Mesh( MovingCubeGeom, MovingCubeMat );
 		MovingCube.position.set(25, 25.1, mc*CUBE_SIZE);
@@ -283,17 +245,16 @@ function init()
 	}
 	scene.add( MovingGroup );	
 
+	//Make wall
 	for (var wall_x = -WALL_SIZE; wall_x <= WALL_SIZE; wall_x++) {
 		make_wall_cube(wall_x, -WALL_SIZE);
 		make_wall_cube(wall_x, WALL_SIZE);	
 	}
-
 	for (var wall_z = -WALL_SIZE; wall_z <= WALL_SIZE; wall_z++) {
 		make_wall_cube(-WALL_SIZE, wall_z);
 		make_wall_cube(WALL_SIZE, wall_z);	
 	}
 }
-
 
 function animate() 
 {
@@ -320,11 +281,6 @@ function update()
 	uniforms.shockwave_z.value = uniforms.shockwave_z.value - 900.0*delta;
 	if (uniforms.shockwave_z.value < -SHOCKWAVE_MAX)
 		uniforms.shockwave_z.value = SHOCKWAVE_MAX;
-
-	
-	// local coordinates
-
-	// local transformations
 
 	// move forwards/backwards/left/right
 	if ( keyboard.pressed("W") )
