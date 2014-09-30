@@ -61,7 +61,7 @@
 			vec3 light = vec3(200, 200, 100);
 			light = normalize(light);
 			float dProd = max(0.0, dot(vNormal, light));
-			gl_FragColor = vec4(dProd, dProd, dProd, 1.0);
+			//gl_FragColor = vec4(dProd, dProd, dProd, 1.0);
 			//gl_FragColor = vec4(vNormal[0]*dProd, vNormal[1]*dProd, vNormal[2]*dProd, 1.0);
 			gl_FragColor = vColor;
 			//gl_FragColor = vec4(vcolor_r, vcolor_g, vcolor_b, vcolor_a);
@@ -201,7 +201,7 @@ function MakeCube(color) {
 
 	// create an array with six textures for a cool cube
 	var cubeMaterialArray = [];
-	for (var f = 0; f < 8; f++) {
+	for (var f = 0; f < 6; f++) {
 		cubeMaterialArray.push(shaderMaterial);
 	}
 
