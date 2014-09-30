@@ -404,9 +404,9 @@ function update()
 
 	// move forwards/backwards/left/right
 	if ( keyboard.pressed("W") )
-		MovingGroup.translateZ( -moveDistance );
+		MovingGroup.translateZ( moveDistance );
 	if ( keyboard.pressed("S") )
-		MovingGroup.translateZ(  moveDistance );
+		MovingGroup.translateZ( -moveDistance );
 	if ( keyboard.pressed("Q") )
 		MovingGroup.translateX( -moveDistance );
 	if ( keyboard.pressed("E") )
