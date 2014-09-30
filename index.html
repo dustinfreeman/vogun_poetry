@@ -18,18 +18,28 @@
 
 <!-- Shaders -->
 	<script type="x-shader/x-vertex" id="vertexshader">
-  		attribute vec4 color;
+  		attribute float color_r;
+  		attribute float color_g;
+  		attribute float color_b;
+  		attribute float color_a;
 
-  		varying vec4 vColor;
   		varying vec3 vNormal;
 		varying vec2 vUv;
 		varying vec4 v_gl_Position;
+  		
+  		varying float vcolor_r;
+  		varying float vcolor_g;
+  		varying float vcolor_b;
+  		varying float vcolor_a;
 		
 		void main() 
 		{ 
 		    vUv = uv;
-		    vNormal = normal;
-		    //vColor = color;
+		    vNormal = normal; //normal is local.
+		    vcolor_r = color_r;
+		    vcolor_g = color_g;
+		    vcolor_b = color_b;
+		    vcolor_a = color_a;
 
 		    gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
 		    v_gl_Position = modelViewMatrix * vec4( position, 1.0 );
@@ -42,10 +52,14 @@
         uniform float shockwave_y;
         uniform float shockwave_z;
         
-        varying vec4 vColor;
 		varying vec3 vNormal;
 		varying vec2 vUv;
 		varying vec4 v_gl_Position;
+        
+        varying float vcolor_r;
+  		varying float vcolor_g;
+  		varying float vcolor_b;
+  		varying float vcolor_a;
 		
   		void main() {
   			//=============================
@@ -54,12 +68,14 @@
 			vec3 light = vec3(200, 200, 100);
 			light = normalize(light);
 			float dProd = max(0.0, dot(vNormal, light));
-			//gl_FragColor = vec4(dProd, dProd, dProd, 1.0);
-			gl_FragColor = vec4(vNormal[0]*dProd, vNormal[1]*dProd, vNormal[2]*dProd, 1.0);
-			// gl_FragColor = vec4(color[0]*dProd, 
-			//  	color[1]*dProd, 
-			//  	color[2]*dProd, 
-			//  	color[3]*1.0);
+			gl_FragColor = vec4(dProd, dProd, dProd, 1.0);
+			//gl_FragColor = vec4(vNormal[0]*dProd, vNormal[1]*dProd, vNormal[2]*dProd, 1.0);
+			// gl_FragColor = vColor;
+			gl_FragColor = vec4(vcolor_r, vcolor_g, vcolor_b, vcolor_a);
+			// gl_FragColor = vec4(dProd*vcolor_r, 
+			//   	dProd*vcolor_g, 
+			//   	dProd*vcolor_b, 
+			//   	1.0);
 
 			//=============================
   			//perturb border to make the appearance of a shockwave
@@ -157,17 +173,26 @@ var fragmentshader;
 //var shaderMaterial;
 
 function MakeCube(color) {
+	//expect color to be float 0.0...1.0
+
 	var attributes = {
-	    color: {
-	        type: 'v4',
-	        value: [] 
+	    color_r: {
+	    	type: 'f',
+	    	value: []
+	    },
+	    color_g: {
+	    	type: 'f',
+	    	value: []
+	    },
+	    color_b: {
+	    	type: 'f',
+	    	value: []
+	    },
+	    color_a: {
+	    	type: 'f',
+	    	value: []
 	    }
 	};
-	var colorArray = attributes.color.value;
-	for (var v = 0; v < 8*6*4; v++) {
-		colorArray.push(color);
-	}
-
 
 	var shaderMaterial =
 	  new THREE.ShaderMaterial({
@@ -182,6 +207,17 @@ function MakeCube(color) {
 	for (var f = 0; f < 8; f++) {
 		cubeMaterialArray.push(shaderMaterial);
 	}
+
+	var TOTAL_V = 8;
+	for (var v = 0; v < TOTAL_V; v++) {
+		//annoying quaternion -> RGBA mappings
+		//THREE.Vector4 not intended for holding color.
+		attributes.color_r.value.push(color.x);
+		attributes.color_g.value.push(color.y);
+		attributes.color_b.value.push(color.z);
+		attributes.color_a.value.push(color.w);
+	}
+	//console.log(color);
 
 	var CubeMat = new THREE.MeshFaceMaterial(cubeMaterialArray);
 	var CubeGeom = new THREE.CubeGeometry( CUBE_SIZE, CUBE_SIZE, CUBE_SIZE, 1, 1, 1, cubeMaterialArray );
@@ -207,9 +243,12 @@ function LoadVoxelObject(image, hor_plane_width) {
 
 		if (pixel.a > 0) //solid object here!
 		{
-			//var Cube = MakeCube(new THREE.Vector4(pixel.r, pixel.g, pixel.b, pixel.a));
-			var Cube = MakeCube(new THREE.Vector4(0.0, 1.0, 1.0, 0.5));
-
+			var Cube = MakeCube(
+				new THREE.Vector4(pixel.r/255.0, 
+					pixel.g/255.0, 
+					pixel.b/255.0, 
+					pixel.a/255.0));
+			//var Cube = MakeCube(new THREE.Vector4(0.0, 1.0, 1.0, 0.5));
 
 			//centering
 			Cube.position.set(
