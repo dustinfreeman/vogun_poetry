@@ -269,6 +269,7 @@ var WALL_SIZE = 10;
 var WALL_COLOR = new THREE.Vector4(0.5, 0.5, 0.5, 1.0);
 var SHOCKWAVE_MAX = 1000;
 var MovingGroup;
+var SupermanGroup;
 
 init();
 animate();
@@ -294,7 +295,7 @@ function init()
 	var VIEW_ANGLE = 45, ASPECT = SCREEN_WIDTH / SCREEN_HEIGHT, NEAR = 0.1, FAR = 20000;
 	camera = new THREE.PerspectiveCamera( VIEW_ANGLE, ASPECT, NEAR, FAR);
 	scene.add(camera);
-	camera.position.set(0,200,400);
+	camera.position.set(0,250,450);
 	camera.lookAt(scene.position);	
 	// RENDERER
 	if ( Detector.webgl )
@@ -353,6 +354,14 @@ function init()
     };
     boat_img.src = 'images/boat.png';
 
+    //Superman
+    var superman_img = new Image();
+    superman_img.onload = function() {
+        SupermanGroup = LoadVoxelObject(this, 9);
+        SupermanGroup.position.set(0, CUBE_SIZE*5, - CUBE_SIZE*10);
+    };
+    superman_img.src = 'images/superman.png';
+
 	//Make wall
 	for (var wall_x = -WALL_SIZE; wall_x <= WALL_SIZE; wall_x++) {
 		makeWallCube(wall_x, -WALL_SIZE);
@@ -387,6 +396,9 @@ function update()
 	uniforms.shockwave.value.z -= 900.0*delta;
 	if (uniforms.shockwave.value.z < -SHOCKWAVE_MAX)
 		uniforms.shockwave.value.z = SHOCKWAVE_MAX;
+
+	//rotate superman
+	SupermanGroup.rotateOnAxis(new THREE.Vector3(0,1,0), delta*1.0);
 
 	// move forwards/backwards/left/right
 	if ( keyboard.pressed("W") )
