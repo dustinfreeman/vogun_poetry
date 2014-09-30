@@ -36,6 +36,7 @@
         uniform float shockwave_x;
         uniform float shockwave_y;
         uniform float shockwave_z;
+        uniform vec4 color;
 
 		varying vec3 vNormal;
 		varying vec2 vUv;
@@ -48,7 +49,10 @@
 			vec3 light = vec3(200, 200, 100);
 			light = normalize(light);
 			float dProd = max(0.0, dot(vNormal, light));
-			gl_FragColor = vec4(dProd, dProd, dProd, 1.0);
+			gl_FragColor = vec4(color[0]*dProd, 
+			 	color[1]*dProd, 
+			 	color[2]*dProd, 
+			 	color[3]*1.0);
 
 			//=============================
   			//perturb border to make the appearance of a shockwave
@@ -129,9 +133,6 @@ function getImageData( image ) {
     var canvas = document.createElement( 'canvas' );
     canvas.width = image.width;
     canvas.height = image.height;
-    console.log(image);
-    console.log(image.width);
-    console.log(image.height);
     var context = canvas.getContext( '2d' );
     context.drawImage( image, 0, 0 );
 
@@ -143,18 +144,37 @@ function getPixel( imagedata, x, y ) {
     return { r: data[ position ], g: data[ position + 1 ], b: data[ position + 2 ], a: data[ position + 3 ] };
 }
 
-var cubeMaterialArray;
 var CUBE_SIZE = 20;
+var shaderMaterial;
+
+function MakeCube(color) {
+	
+	//shaderMaterial.uniforms.color.value = new THREE.Vector4( 0.0, 1.0, 1.0, 1.0 )
+	shaderMaterial.uniforms.color.value = color;
+
+	// create an array with six textures for a cool cube
+	var cubeMaterialArray = [];
+	cubeMaterialArray.push(shaderMaterial);
+	cubeMaterialArray.push(shaderMaterial);
+	cubeMaterialArray.push(shaderMaterial);
+	cubeMaterialArray.push(shaderMaterial);
+	cubeMaterialArray.push(shaderMaterial);
+	cubeMaterialArray.push(shaderMaterial);
+
+	var CubeMat = new THREE.MeshFaceMaterial(cubeMaterialArray);
+	var CubeGeom = new THREE.CubeGeometry( CUBE_SIZE, CUBE_SIZE, CUBE_SIZE, 1, 1, 1, cubeMaterialArray );
+
+	var Cube = new THREE.Mesh( CubeGeom, CubeMat);
+	return Cube;
+}
 
 function LoadVoxelObject(image, hor_plane_width) {
-	console.log(image);
 	var vox_data = getImageData(image);
 	var VoxelGroup = new THREE.Object3D();//create an empty container
 	
 	//spawn cubes in each non-zero voxel (alpha == 0) of the object
 	//different plan sections of the object are laid out horizontally.
 	var num_hor_planes = vox_data.height/hor_plane_width;
-	console.log("Voxel Object: num_hor_planes", num_hor_planes);
 
 	for (var x = 0; x < hor_plane_width; x ++) {
 	for (var z = 0; z < hor_plane_width; z ++) {
@@ -163,7 +183,9 @@ function LoadVoxelObject(image, hor_plane_width) {
 
 		if (pixel.a > 0) //solid object here!
 		{
-			var Cube = new THREE.Mesh( MovingCubeGeom, MovingCubeMat );
+			//var Cube = MakeCube(new THREE.Vector4(pixel.r, pixel.g, pixel.b, pixel.a));
+			var Cube = MakeCube(new THREE.Vector4(0.0, 1.0, 1.0, 0.5));
+
 
 			//centering
 			Cube.position.set(
@@ -177,27 +199,19 @@ function LoadVoxelObject(image, hor_plane_width) {
 
 	scene.add( VoxelGroup );
 	return VoxelGroup;
-	// for (var mc = 0; mc < 4; mc++) { 
-	// 	var MovingCube = new THREE.Mesh( MovingCubeGeom, MovingCubeMat );
-	// 	MovingCube.position.set(25, 25.1, mc*CUBE_SIZE);
-	// 	MovingGroup.add(MovingCube);
-	// }
-	// scene.add( MovingGroup );	
 }
 
 // custom global variables
 var WALL_SIZE = 10;
+var WALL_COLOR = new THREE.Vector4(0.5, 0.5, 0.5, 1.0);
 var SHOCKWAVE_MAX = 1000;
 var MovingGroup;
 
 init();
 animate();
 
-var MovingCubeMat;
-var MovingCubeGeom;
-
-function make_wall_cube(x, z) {
-	var WallCube = new THREE.Mesh( MovingCubeGeom, MovingCubeMat);
+function makeWallCube(x, z) {
+	var WallCube = MakeCube(WALL_COLOR);
 	WallCube.position.set(x*CUBE_SIZE,25.1,z*CUBE_SIZE);
 	scene.add(WallCube);
 }
@@ -242,11 +256,16 @@ function init()
 			type: 'f', 
 			value: SHOCKWAVE_MAX 
 		},
+		color: {
+			type: 'v4',
+			value: new THREE.Vector4( 1.0, 1.0, 1.0, 1.0 )	//default color
+		}
 	};
 	this.customAttributes = {	};
 	var vertexshader = document.getElementById( 'vertexshader' ).textContent;
 	var fragmentshader = document.getElementById( 'fragmentshader' ).textContent;
-	var shaderMaterial =
+
+	shaderMaterial =
 	  new THREE.ShaderMaterial({
 	  	uniforms: 	uniforms, 
 	  	attributes: customAttributes, 
@@ -288,18 +307,6 @@ function init()
 	// CUSTOM //
 	////////////
 
-	// create an array with six textures for a cool cube
-	cubeMaterialArray = [];
-	cubeMaterialArray.push(shaderMaterial);
-	cubeMaterialArray.push(shaderMaterial);
-	cubeMaterialArray.push(shaderMaterial);
-	cubeMaterialArray.push(shaderMaterial);
-	cubeMaterialArray.push(shaderMaterial);
-	cubeMaterialArray.push(shaderMaterial);
-
-	MovingCubeMat = new THREE.MeshFaceMaterial(cubeMaterialArray);
-	MovingCubeGeom = new THREE.CubeGeometry( CUBE_SIZE, CUBE_SIZE, CUBE_SIZE, 1, 1, 1, cubeMaterialArray );
-
 	//Make moving object
 	var boat_img = new Image();
     boat_img.onload = function() {
@@ -310,12 +317,12 @@ function init()
 
 	//Make wall
 	for (var wall_x = -WALL_SIZE; wall_x <= WALL_SIZE; wall_x++) {
-		make_wall_cube(wall_x, -WALL_SIZE);
-		make_wall_cube(wall_x, WALL_SIZE);	
+		makeWallCube(wall_x, -WALL_SIZE);
+		makeWallCube(wall_x, WALL_SIZE);	
 	}
 	for (var wall_z = -WALL_SIZE; wall_z <= WALL_SIZE; wall_z++) {
-		make_wall_cube(-WALL_SIZE, wall_z);
-		make_wall_cube(WALL_SIZE, wall_z);	
+		makeWallCube(-WALL_SIZE, wall_z);
+		makeWallCube(WALL_SIZE, wall_z);	
 	}
 }
 
