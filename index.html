@@ -18,28 +18,27 @@
 
 <!-- Shaders -->
 	<script type="x-shader/x-vertex" id="vertexshader">
+  		//attribute vec4 color;
   		attribute float color_r;
   		attribute float color_g;
   		attribute float color_b;
   		attribute float color_a;
+  		//seem to have trouble passing attribute as vec4
 
   		varying vec3 vNormal;
 		varying vec2 vUv;
 		varying vec4 v_gl_Position;
-  		
-  		varying float vcolor_r;
-  		varying float vcolor_g;
-  		varying float vcolor_b;
-  		varying float vcolor_a;
-		
+  		varying vec4 vColor;
+
 		void main() 
 		{ 
 		    vUv = uv;
 		    vNormal = normal; //normal is local.
-		    vcolor_r = color_r;
-		    vcolor_g = color_g;
-		    vcolor_b = color_b;
-		    vcolor_a = color_a;
+		   	//vColor = color;
+		   	vColor[0] = color_r;
+   			vColor[1] = color_g;
+   			vColor[2] = color_b;
+   			vColor[3] = color_a;
 
 		    gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
 		    v_gl_Position = modelViewMatrix * vec4( position, 1.0 );
@@ -48,19 +47,13 @@
 	
 	<script type="x-shader/x-fragment" id="fragmentshader">
 		//shockwave location vars
-        uniform float shockwave_x;
-        uniform float shockwave_y;
-        uniform float shockwave_z;
+        uniform vec3 shockwave;
         
 		varying vec3 vNormal;
 		varying vec2 vUv;
 		varying vec4 v_gl_Position;
-        
-        varying float vcolor_r;
-  		varying float vcolor_g;
-  		varying float vcolor_b;
-  		varying float vcolor_a;
-		
+  		varying vec4 vColor;
+
   		void main() {
   			//=============================
   			//draw the main face, shaded by light
@@ -70,8 +63,8 @@
 			float dProd = max(0.0, dot(vNormal, light));
 			gl_FragColor = vec4(dProd, dProd, dProd, 1.0);
 			//gl_FragColor = vec4(vNormal[0]*dProd, vNormal[1]*dProd, vNormal[2]*dProd, 1.0);
-			// gl_FragColor = vColor;
-			gl_FragColor = vec4(vcolor_r, vcolor_g, vcolor_b, vcolor_a);
+			gl_FragColor = vColor;
+			//gl_FragColor = vec4(vcolor_r, vcolor_g, vcolor_b, vcolor_a);
 			// gl_FragColor = vec4(dProd*vcolor_r, 
 			//   	dProd*vcolor_g, 
 			//   	dProd*vcolor_b, 
@@ -83,9 +76,9 @@
   			float border_width = 0.05;
   			
   			vec3 shockwave_dist;
-  			shockwave_dist[0] = abs(v_gl_Position[0] - shockwave_x);
-  			shockwave_dist[1] = abs(v_gl_Position[1] - shockwave_y);
-  			shockwave_dist[2] = abs(v_gl_Position[2] - shockwave_z);
+  			shockwave_dist[0] = abs(v_gl_Position[0] - shockwave[0]);
+  			shockwave_dist[1] = abs(v_gl_Position[1] - shockwave[1]);
+  			shockwave_dist[2] = abs(v_gl_Position[2] - shockwave[2]);
 
 			//customizing intensity and effective width for each,
 			// correlates roughly with speed: thinner <-> faster  			
@@ -176,7 +169,7 @@ function MakeCube(color) {
 	//expect color to be float 0.0...1.0
 
 	var attributes = {
-	    color_r: {
+		color_r: {
 	    	type: 'f',
 	    	value: []
 	    },
@@ -192,6 +185,10 @@ function MakeCube(color) {
 	    	type: 'f',
 	    	value: []
 	    }
+		// color: {
+		// 	type: 'v4',
+		// 	value: []
+		// }
 	};
 
 	var shaderMaterial =
@@ -212,6 +209,11 @@ function MakeCube(color) {
 	for (var v = 0; v < TOTAL_V; v++) {
 		//annoying quaternion -> RGBA mappings
 		//THREE.Vector4 not intended for holding color.
+
+		//attributes.color.value.push(color);
+		//attributes.color.value.push(
+		//	new THREE.Vector4(color.x, color.y, color.z, color.w));
+
 		attributes.color_r.value.push(color.x);
 		attributes.color_g.value.push(color.y);
 		attributes.color_b.value.push(color.z);
@@ -221,7 +223,6 @@ function MakeCube(color) {
 
 	var CubeMat = new THREE.MeshFaceMaterial(cubeMaterialArray);
 	var CubeGeom = new THREE.CubeGeometry( CUBE_SIZE, CUBE_SIZE, CUBE_SIZE, 1, 1, 1, cubeMaterialArray );
-
 	//console.log(CubeGeom);
 
 	var Cube = new THREE.Mesh( CubeGeom, CubeMat);
@@ -248,7 +249,6 @@ function LoadVoxelObject(image, hor_plane_width) {
 					pixel.g/255.0, 
 					pixel.b/255.0, 
 					pixel.a/255.0));
-			//var Cube = MakeCube(new THREE.Vector4(0.0, 1.0, 1.0, 0.5));
 
 			//centering
 			Cube.position.set(
@@ -294,7 +294,7 @@ function init()
 	var VIEW_ANGLE = 45, ASPECT = SCREEN_WIDTH / SCREEN_HEIGHT, NEAR = 0.1, FAR = 20000;
 	camera = new THREE.PerspectiveCamera( VIEW_ANGLE, ASPECT, NEAR, FAR);
 	scene.add(camera);
-	camera.position.set(0,150,400);
+	camera.position.set(0,200,400);
 	camera.lookAt(scene.position);	
 	// RENDERER
 	if ( Detector.webgl )
@@ -307,17 +307,9 @@ function init()
 	// SHADERS
 	var dummyTexture = THREE.ImageUtils.generateDataTexture( 1, 1, new THREE.Color( 0xffffff ) );
 	this.uniforms = {
-		shockwave_x: {
-			type: 'f', // a float
-			value: SHOCKWAVE_MAX
-		},
-		shockwave_y: {
-			type: 'f', // a float
-			value: SHOCKWAVE_MAX
-		},
-		shockwave_z: {
-			type: 'f', 
-			value: SHOCKWAVE_MAX 
+		shockwave: {
+			type: 'v3',
+			value: new THREE.Vector3( SHOCKWAVE_MAX, SHOCKWAVE_MAX, SHOCKWAVE_MAX )
 		}
 	};
 	vertexshader = document.getElementById( 'vertexshader' ).textContent;
@@ -353,10 +345,6 @@ function init()
 	// scene.add(skyBox);
 	scene.fog = new THREE.FogExp2( 0x9999ff, 0.00025 );
 	
-	////////////
-	// CUSTOM //
-	////////////
-
 	//Make moving object
 	var boat_img = new Image();
     boat_img.onload = function() {
@@ -390,17 +378,15 @@ function update()
 	var rotateAngle = Math.PI / 2 * delta;   // pi/2 radians (90 degrees) per second
 
 	//Move the shockwaves
-	uniforms.shockwave_x.value = uniforms.shockwave_x.value - 100.0*delta;
-	if (uniforms.shockwave_x.value < -SHOCKWAVE_MAX)
-		uniforms.shockwave_x.value = SHOCKWAVE_MAX;
-
-	uniforms.shockwave_y.value = uniforms.shockwave_y.value - 300.0*delta;
-	if (uniforms.shockwave_y.value < -SHOCKWAVE_MAX)
-		uniforms.shockwave_y.value = SHOCKWAVE_MAX;
-
-	uniforms.shockwave_z.value = uniforms.shockwave_z.value - 900.0*delta;
-	if (uniforms.shockwave_z.value < -SHOCKWAVE_MAX)
-		uniforms.shockwave_z.value = SHOCKWAVE_MAX;
+	uniforms.shockwave.value.x -= 100.0*delta;
+	if (uniforms.shockwave.value.x < -SHOCKWAVE_MAX)
+		uniforms.shockwave.value.x = SHOCKWAVE_MAX;
+	uniforms.shockwave.value.y -= 300.0*delta;
+	if (uniforms.shockwave.value.y < -SHOCKWAVE_MAX)
+		uniforms.shockwave.value.y = SHOCKWAVE_MAX;
+	uniforms.shockwave.value.z -= 900.0*delta;
+	if (uniforms.shockwave.value.z < -SHOCKWAVE_MAX)
+		uniforms.shockwave.value.z = SHOCKWAVE_MAX;
 
 	// move forwards/backwards/left/right
 	if ( keyboard.pressed("W") )
