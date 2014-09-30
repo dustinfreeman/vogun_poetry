@@ -18,6 +18,9 @@
 
 <!-- Shaders -->
 	<script type="x-shader/x-vertex" id="vertexshader">
+  		attribute vec4 color;
+
+  		varying vec4 vColor;
   		varying vec3 vNormal;
 		varying vec2 vUv;
 		varying vec4 v_gl_Position;
@@ -26,6 +29,8 @@
 		{ 
 		    vUv = uv;
 		    vNormal = normal;
+		    //vColor = color;
+
 		    gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
 		    v_gl_Position = modelViewMatrix * vec4( position, 1.0 );
 		}
@@ -36,8 +41,8 @@
         uniform float shockwave_x;
         uniform float shockwave_y;
         uniform float shockwave_z;
-        uniform vec4 color;
-
+        
+        varying vec4 vColor;
 		varying vec3 vNormal;
 		varying vec2 vUv;
 		varying vec4 v_gl_Position;
@@ -49,10 +54,12 @@
 			vec3 light = vec3(200, 200, 100);
 			light = normalize(light);
 			float dProd = max(0.0, dot(vNormal, light));
-			gl_FragColor = vec4(color[0]*dProd, 
-			 	color[1]*dProd, 
-			 	color[2]*dProd, 
-			 	color[3]*1.0);
+			//gl_FragColor = vec4(dProd, dProd, dProd, 1.0);
+			gl_FragColor = vec4(vNormal[0]*dProd, vNormal[1]*dProd, vNormal[2]*dProd, 1.0);
+			// gl_FragColor = vec4(color[0]*dProd, 
+			//  	color[1]*dProd, 
+			//  	color[2]*dProd, 
+			//  	color[3]*1.0);
 
 			//=============================
   			//perturb border to make the appearance of a shockwave
@@ -145,24 +152,41 @@ function getPixel( imagedata, x, y ) {
 }
 
 var CUBE_SIZE = 20;
-var shaderMaterial;
+var vertexshader;
+var fragmentshader;
+//var shaderMaterial;
 
 function MakeCube(color) {
-	
-	//shaderMaterial.uniforms.color.value = new THREE.Vector4( 0.0, 1.0, 1.0, 1.0 )
-	shaderMaterial.uniforms.color.value = color;
+	var attributes = {
+	    color: {
+	        type: 'v4',
+	        value: [] 
+	    }
+	};
+	var colorArray = attributes.color.value;
+	for (var v = 0; v < 8*6*4; v++) {
+		colorArray.push(color);
+	}
+
+
+	var shaderMaterial =
+	  new THREE.ShaderMaterial({
+	  	uniforms: 	uniforms, 
+	  	attributes: attributes, 
+	  	vertexShader:   vertexshader,
+	    fragmentShader: fragmentshader, 
+	  });
 
 	// create an array with six textures for a cool cube
 	var cubeMaterialArray = [];
-	cubeMaterialArray.push(shaderMaterial);
-	cubeMaterialArray.push(shaderMaterial);
-	cubeMaterialArray.push(shaderMaterial);
-	cubeMaterialArray.push(shaderMaterial);
-	cubeMaterialArray.push(shaderMaterial);
-	cubeMaterialArray.push(shaderMaterial);
+	for (var f = 0; f < 8; f++) {
+		cubeMaterialArray.push(shaderMaterial);
+	}
 
 	var CubeMat = new THREE.MeshFaceMaterial(cubeMaterialArray);
 	var CubeGeom = new THREE.CubeGeometry( CUBE_SIZE, CUBE_SIZE, CUBE_SIZE, 1, 1, 1, cubeMaterialArray );
+
+	//console.log(CubeGeom);
 
 	var Cube = new THREE.Mesh( CubeGeom, CubeMat);
 	return Cube;
@@ -255,23 +279,10 @@ function init()
 		shockwave_z: {
 			type: 'f', 
 			value: SHOCKWAVE_MAX 
-		},
-		color: {
-			type: 'v4',
-			value: new THREE.Vector4( 1.0, 1.0, 1.0, 1.0 )	//default color
 		}
 	};
-	this.customAttributes = {	};
-	var vertexshader = document.getElementById( 'vertexshader' ).textContent;
-	var fragmentshader = document.getElementById( 'fragmentshader' ).textContent;
-
-	shaderMaterial =
-	  new THREE.ShaderMaterial({
-	  	uniforms: 	uniforms, 
-	  	attributes: customAttributes, 
-	  	vertexShader:   vertexshader,
-	    fragmentShader: fragmentshader, 
-	  });
+	vertexshader = document.getElementById( 'vertexshader' ).textContent;
+	fragmentshader = document.getElementById( 'fragmentshader' ).textContent;
 
 	// EVENTS
 	THREEx.WindowResize(renderer, camera);
